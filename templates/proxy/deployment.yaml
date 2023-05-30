@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: heimdall-proxy
+spec:
+  selector:
+    matchLabels:
+      cattle.io/app: heimdall-proxy
+  template:
+    metadata:
+      labels:
+        cattle.io/app: heimdall-proxy
+    spec:
+      securityContext:
+        runAsUser: 499
+      containers:
+        - name: proxy
+          image: "{{ template "system_default_registry" . }}{{ .Values.proxy.image.name }}:{{ .Values.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.imagePullPolicy }}
+          env:
+          - name: HEIMDALL_SVC
+            value: {{ include "heimdall.fullname" . }}
+          - name: HEIMDALL_NAMESPACE
+            value: {{ .Release.Namespace }}
+          - name: HEIMDALL_PORT
+            value: {{ .Values.heimdall.service.port | quote }}
+          - name: PROXY_PORT
+            value: {{ .Values.proxy.port | quote }}
+          ports:
+          - containerPort: {{ .Values.proxy.port }}
+            protocol: TCP
+            name: http
